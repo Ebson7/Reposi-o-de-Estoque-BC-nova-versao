@@ -85,7 +85,7 @@ export const UserPortal: React.FC<UserPortalProps> = ({
   const handleCopyFormattedList = () => {
     const dateStr = new Date().toLocaleDateString('pt-BR');
     const itemsStr = myRequests.map(r => 
-      `QTD: ${r.quantidade} UNIDADE: ${r.unidade} - Cód: ${r.productCode}${r.productSabor ? ` (${r.productSabor})` : ''}${r.isValidadeCurta ? ' [VALIDADE CURTA]' : ''}${r.observacoes ? ` [Obs: ${r.observacoes}]` : ''}`
+      `QTD: ${r.quantidade} ${r.unidade} - Cód: ${r.productCode}${r.productSabor ? ` (${r.productSabor})` : ''}${r.isValidadeCurta ? ' [VALIDADE CURTA]' : ''}${r.observacoes ? ` [Obs: ${r.observacoes}]` : ''}`
     ).join('\n');
     
     const fullText = `📦 PEDIDO MARSIL
