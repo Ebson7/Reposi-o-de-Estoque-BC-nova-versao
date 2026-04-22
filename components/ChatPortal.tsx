@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Search, ShoppingCart, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Search, ShoppingCart, Trash2, Mic, MicOff } from 'lucide-react';
 import { Product, ChatMessage } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -21,7 +21,55 @@ export const ChatPortal: React.FC<ChatPortalProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'pt-BR';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (error) {
+          console.error('Failed to start recognition:', error);
+          // Sometimes it errors if already started or state is weird
+          setIsListening(false);
+        }
+      } else {
+        alert('Seu navegador não suporta reconhecimento de voz.');
+      }
+    }
+  };
 
   // Initialize Gemini
   const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
@@ -195,9 +243,21 @@ export const ChatPortal: React.FC<ChatPortalProps> = ({
 
       <form onSubmit={handleSend} className="p-4 border-t border-gray-50 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="relative flex items-center gap-2">
+          <button 
+            type="button"
+            onClick={toggleListening}
+            className={`p-3 rounded-xl transition-all ${
+              isListening 
+                ? 'bg-red-500 text-white animate-pulse' 
+                : 'bg-gray-100 dark:bg-slate-800 text-gray-500 hover:text-blue-600'
+            }`}
+            title={isListening ? "Parar de ouvir" : "Falar"}
+          >
+            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
           <input 
             type="text" 
-            placeholder="Pergunte algo ao assistente..." 
+            placeholder={isListening ? "Ouvindo..." : "Pergunte algo ao assistente..."} 
             className="flex-grow pl-5 pr-14 py-4 rounded-2xl bg-gray-50 dark:bg-slate-800 dark:text-white outline-none border-2 border-transparent focus:border-blue-500 transition-all font-medium text-sm"
             value={input}
             onChange={(e) => setInput(e.target.value)}
