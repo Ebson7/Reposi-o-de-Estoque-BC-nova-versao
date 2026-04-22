@@ -45,10 +45,18 @@ export interface StockRequest {
   status: 'Pendente' | 'Aprovado' | 'Recusado';
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  results?: Product[];
+}
+
 export interface AppState {
   products: Product[];
   requests: StockRequest[];
   vendedores: string[];
   whatsappConfig: WhatsAppConfig;
   updateHistory: UpdateLog[];
+  chatHistory: ChatMessage[];
 }

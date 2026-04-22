@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Search, ShoppingCart, Calendar, RefreshCw, AlertTriangle, Building2, Store, ListPlus, X, Send, User, Hash, FileText, Filter, Copy, Check, Clock, History, Clipboard, ArrowRight, PlusCircle, CheckCircle2, Candy, Trash2, Edit3, MessageSquareText, Timer, Info } from 'lucide-react';
-import { Product, StockRequest, WhatsAppConfig, RequestType, UnitType } from '../types';
+import { Search, ShoppingCart, Calendar, RefreshCw, AlertTriangle, Building2, Store, ListPlus, X, Send, User, Hash, FileText, Filter, Copy, Check, Clock, History, Clipboard, ArrowRight, PlusCircle, CheckCircle2, Candy, Trash2, Edit3, MessageSquareText, Timer, Info, Bot } from 'lucide-react';
+import { Product, StockRequest, WhatsAppConfig, RequestType, UnitType, ChatMessage } from '../types';
+import { ChatPortal } from './ChatPortal';
 
 interface UserPortalProps {
   products: Product[];
@@ -15,6 +16,9 @@ interface UserPortalProps {
   isSyncing?: boolean;
   onManualRefresh?: () => void;
   lastUpdate?: string;
+  chatHistory: ChatMessage[];
+  onSendMessage: (msg: string, results?: Product[]) => void;
+  onClearChat: () => void;
 }
 
 const UNIT_OPTIONS: UnitType[] = ['UN', 'CX', 'DP', 'PCT', 'PT', 'SC', 'FD'];
@@ -30,9 +34,12 @@ export const UserPortal: React.FC<UserPortalProps> = ({
   onUpdateRequest,
   isSyncing = false,
   onManualRefresh,
-  lastUpdate
+  lastUpdate,
+  chatHistory,
+  onSendMessage,
+  onClearChat
 }) => {
-  const [activeView, setActiveView] = useState<'consulta' | 'historico'>('consulta');
+  const [activeView, setActiveView] = useState<'consulta' | 'historico' | 'chat'>('consulta');
   const [filterCodigo, setFilterCodigo] = useState('');
   const [filterDescricao, setFilterDescricao] = useState('');
   const [filterFornecedor, setFilterFornecedor] = useState('');
@@ -227,6 +234,12 @@ Pedido Extra Boracéia`;
           >
             <History className="w-3.5 h-3.5" /> Carrinho ({myRequests.length})
           </button>
+          <button 
+            onClick={() => setActiveView('chat')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'chat' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-blue-500'}`}
+          >
+            <Bot className="w-3.5 h-3.5" /> Assistente AI
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -347,7 +360,7 @@ Pedido Extra Boracéia`;
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeView === 'historico' ? (
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden animate-in slide-in-from-right-4">
           <div className="p-6 border-b border-gray-50 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center bg-gray-50/20 dark:bg-slate-800/20 gap-4">
             <div>
@@ -454,6 +467,17 @@ Pedido Extra Boracéia`;
             )}
           </div>
         </div>
+      ) : (
+        <ChatPortal 
+          products={products}
+          chatHistory={chatHistory}
+          onSendMessage={onSendMessage}
+          onClearHistory={onClearChat}
+          onSelectProduct={(p) => {
+            setSelected(p);
+            setActiveView('consulta');
+          }}
+        />
       )}
 
       {selected && (

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserPortal } from './components/UserPortal';
 import { AdminPortal } from './components/AdminPortal';
-import { AppState, Product, StockRequest, WhatsAppConfig, UpdateLog } from './types';
+import { AppState, Product, StockRequest, WhatsAppConfig, UpdateLog, ChatMessage } from './types';
 import { LayoutDashboard, ShieldCheck, Sun, Moon, KeyRound, LogOut, ChevronRight, Store, X, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -13,6 +13,7 @@ const VENDEDORES_KEY = 'marsil_vendedores_list';
 const REQUESTS_KEY = 'marsil_requests_history';
 const SYNC_URL_KEY = 'marsil_sync_url';
 const UPDATE_HISTORY_KEY = 'marsil_update_history';
+const CHAT_HISTORY_KEY = 'marsil_chat_history';
 
 const PASSWORDS = {
   VENDOR: '@marsil2026',
@@ -52,6 +53,7 @@ const App: React.FC = () => {
     const savedVendedores = localStorage.getItem(VENDEDORES_KEY);
     const savedRequests = localStorage.getItem(REQUESTS_KEY);
     const savedHistory = localStorage.getItem(UPDATE_HISTORY_KEY);
+    const savedChat = localStorage.getItem(CHAT_HISTORY_KEY);
 
     let finalVendedores = DEFAULT_VENDEDORES;
     if (savedVendedores) {
@@ -66,7 +68,8 @@ const App: React.FC = () => {
       requests: savedRequests ? JSON.parse(savedRequests) : [], 
       vendedores: finalVendedores,
       whatsappConfig: { enabled: true, phoneNumber: '5511999999999' },
-      updateHistory: savedHistory ? JSON.parse(savedHistory) : []
+      updateHistory: savedHistory ? JSON.parse(savedHistory) : [],
+      chatHistory: savedChat ? JSON.parse(savedChat) : []
     };
   });
 
@@ -186,6 +189,7 @@ const App: React.FC = () => {
     localStorage.setItem(VENDEDORES_KEY, JSON.stringify(appState.vendedores));
     localStorage.setItem(REQUESTS_KEY, JSON.stringify(appState.requests));
     localStorage.setItem(UPDATE_HISTORY_KEY, JSON.stringify(appState.updateHistory));
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(appState.chatHistory));
   }, [appState]);
 
   useEffect(() => {
@@ -276,6 +280,22 @@ const App: React.FC = () => {
   const handleClearRequests = () => {
     if (window.confirm('Limpar histórico local de pedidos?')) {
       setAppState(prev => ({ ...prev, requests: [] }));
+    }
+  };
+
+  const handleSendMessage = (content: string, results?: Product[]) => {
+    const newMessage: ChatMessage = {
+      role: results !== undefined ? 'assistant' : 'user',
+      content,
+      timestamp: new Date().toISOString(),
+      results
+    };
+    setAppState(prev => ({ ...prev, chatHistory: [...prev.chatHistory, newMessage].slice(-50) }));
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm('Deseja limpar o histórico da conversa?')) {
+      setAppState(prev => ({ ...prev, chatHistory: [] }));
     }
   };
 
@@ -381,6 +401,9 @@ const App: React.FC = () => {
               isSyncing={isSyncing}
               onManualRefresh={handleManualRefresh}
               lastUpdate={appState.updateHistory[0]?.timestamp}
+              chatHistory={appState.chatHistory}
+              onSendMessage={handleSendMessage}
+              onClearChat={handleClearChat}
             />
           ) : (
             <AdminPortal 
